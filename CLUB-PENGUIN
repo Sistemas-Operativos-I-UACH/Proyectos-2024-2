@@ -1,0 +1,113 @@
+//Integrantes Del Equipo:
+//a367756
+//a348691
+//a361904
+
+#include <stdio.h>
+#include <dirent.h>
+#include <ctype.h>
+#include <stdlib.h>
+
+void get_process_cmd(char *filename, char *procname);
+void get_process_stat(char *filename, char *statinfo);
+
+long tam=0;
+
+int main (int argc, char *argv[]) {
+        struct dirent *entry;
+        DIR *pDir;
+        char proc_dir[] = "/proc";
+        char proc_id_dir[255];
+        char proc_id_dir1[255];
+        char cmdline[500];
+        char statinfo[500];
+
+        /*if (argc != 2) {
+                printf ("Usage: testprog <dirname>\n");
+                return 1;
+        }*/
+
+        // Ensure we can open directory.
+
+        pDir = opendir (proc_dir);
+        if (pDir == NULL) {
+                printf ("Cannot open directory UFF '%s'\n", argv[1]);
+                return 1;
+        }
+
+        // Process each entry.
+
+        while ((entry = readdir(pDir)) != NULL) {
+        if ( ! isdigit(entry->d_name[0]) )
+          continue;
+
+            sprintf(proc_id_dir, "/proc/%s/cmdline", entry->d_name);
+            get_process_cmd(proc_id_dir, cmdline);
+             sprintf(proc_id_dir1, "/proc/%s/stat", entry->d_name);
+            get_process_stat(proc_id_dir1, statinfo);
+            
+            printf ("\n[%s]:CMDLINE:%s STAT: %s", entry->d_name, cmdline, statinfo);
+            if(tam==0){
+					printf("Es proceso de Kernel\n");
+					printf("--------------------------------------------------------------------------------------------------------------------------");
+				}
+
+				else{
+					printf("Es proceso de Usuario\n");
+					printf("-------------------------------------------------------------------------------------------------------------------------");
+				}
+        }
+
+        // Close directory and exit.
+
+        closedir (pDir);
+        return 0;
+}
+
+
+void get_process_stat(char *filename, char *statinfo) {
+  FILE *fp;
+  char *line1 = NULL;
+  size_t len1 = 0;
+  statinfo[0] = '\0';
+
+  // Open file in read-only mode
+  fp = fopen(filename,"r");
+
+  // If file opened successfully, then print the contents
+  if ( fp == NULL ) {
+    printf("Error abriendo archivo %s\n", filename);
+    exit(2);
+   }
+
+  while(getline(&line1, &len1, fp) != -1) {
+    sprintf(statinfo, "%s%s", statinfo, line1);
+  }
+
+  fclose(fp);
+  free(line1);
+}
+void get_process_cmd(char *filename, char *procname) {
+  FILE *fp;
+  char *line = NULL;
+  size_t len = 0;
+  procname[0] = '\0';
+
+  // Open file in read-only mode
+  fp = fopen(filename,"r");
+
+  // If file opened successfully, then print the contents
+  if ( fp == NULL ) {
+    printf("Error abriendo archivo %s\n", filename);
+    exit(2);
+   }
+
+  while(getline(&line, &len, fp) != -1) {
+    sprintf(procname, "%s%s", procname, line);
+  }
+  tam = ftell(fp);
+    
+
+  fclose(fp);
+  free(line);
+}
