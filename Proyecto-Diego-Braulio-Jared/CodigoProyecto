@@ -1,0 +1,106 @@
+#include <stdio.h>
+#include <dirent.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <time.h>
+
+void get_process(char *filename, char *procname, int pid);
+void archivo_existe(FILE *fp, char *filename);
+
+int main (int argc, char *argv[]) {
+        struct dirent *entry;
+        DIR *pDir;
+        char proc_dir[] = "/proc";
+        char proc_id_dir[255];
+        char cmdline[255];
+	srand(time(NULL));
+	int pid = rand() % 5000 + 1;
+	//int pid = 4042;
+
+        /*if (argc != 2) {
+                printf ("Usage: testprog <dirname>\n");
+                return 1;
+        }*/
+
+        // Ensure we can open directory.
+
+        pDir = opendir (proc_dir);
+        if (pDir == NULL) {
+                printf ("Cannot open directory UFF '%s'\n", argv[1]);
+                return 1;
+        }
+
+        // Process each entry.
+       /*
+	while ((entry = readdir(pDir)) != NULL) {
+        if ( ! isdigit(entry->d_name[0]) )
+          continue;
+
+            sprintf(proc_id_dir, "/proc/%s/cmdline", entry->d_name);
+            get_process_cmd(proc_id_dir, cmdline);
+            printf ("%s:%s\n", entry->d_name, cmdline);
+        }
+	*/
+
+	if((entry = readdir(pDir)) != NULL) {
+	  if(! isdigit(entry->d_name[0])){
+		printf("El PID es: %i\n", pid);
+		sprintf(proc_id_dir, "/proc/%i/cmdline", pid);
+		get_process(proc_id_dir, cmdline, pid);
+	  }
+	}
+        // Close directory and exit.
+
+        closedir (pDir);
+        return 0;
+}
+
+
+void get_process(char *filename, char *procname, int pid) {
+  FILE *fp;
+  char *line = NULL;
+  size_t len = 0;
+  procname[0] = '\0';
+  int unused;
+  char comm[1000];
+
+  // Open file in read-only mode
+  fp = fopen(filename,"r");
+
+  archivo_existe(fp, filename);
+
+  if(getline(&line, &len, fp) != -1) {
+    printf("El PID: %i, es un proceso de Usuario\n", pid);
+    sprintf(procname, "%s%s", procname, line);
+    printf ("%i:%s\n", pid, procname);
+    fclose(fp);
+
+    sprintf(filename, "/proc/%i/stat", pid);
+    fp = fopen(filename, "r");
+    archivo_existe(fp, filename);
+    fscanf(fp, "%d %s", &unused, comm);
+    printf("Nombre del proceso de Usuario: %s\n", comm);
+  }else {
+    //Se cierra el anterior File con filename ./cmdline
+    fclose(fp);
+
+    printf("El PID: %i, es un proceso de Kernel\n", pid);
+    sprintf(filename, "/proc/%i/stat", pid);
+
+    fp = fopen(filename, "r");
+    archivo_existe(fp, filename);
+    fscanf(fp, "%d %s", &unused, comm);
+    printf("Nombre del proceso de Kernel: %s\n", comm);
+  }
+
+  fclose(fp);
+  free(line);
+}
+
+void archivo_existe(FILE *fp, char *filename){
+    if( fp == NULL ) {
+      printf("Error abriendo archivo %s\n", filename);
+      exit(2);
+    }
+}
+
